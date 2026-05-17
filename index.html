@@ -4033,17 +4033,17 @@ function syncFromFirebase(){
 // ─── SAVE helpers ke Firebase ───
 function fbSaveSiswa(siswa){
   if(!canEdit()) return;
-  fbDb.ref(KB('siswa/'+siswa.nisn).set(siswa);
+  fbDb.ref(KB('siswa/'+siswa.nisn)).set(siswa);
 }
 function fbSaveKas(trx){
   if(!canKas()) return;
   const key = fbDb.ref(KB('kas')).push().key;
-  fbDb.ref(KB('kas/'+key).set({...trx, id:key});
+  fbDb.ref(KB('kas/'+key)).set({...trx, id:key});
   return key;
 }
 function fbSavePresensi(tanggal, data){
   if(!canEdit()) return;
-  fbDb.ref(KB('presensi/'+tanggal).set(data);
+  fbDb.ref(KB('presensi/'+tanggal)).set(data);
 }
 function fbSaveJadwal(){
   if(!canEdit()) return;
@@ -4052,7 +4052,7 @@ function fbSaveJadwal(){
 function fbSavePengumuman(item){
   if(!canEdit()) return;
   const key = fbDb.ref(KB('pengumuman')).push().key;
-  fbDb.ref(KB('pengumuman/'+key).set({...item, id:key});
+  fbDb.ref(KB('pengumuman/'+key)).set({...item, id:key});
 }
 function fbSaveNilai(data){
   if(!canEdit()) return;
@@ -4060,7 +4060,7 @@ function fbSaveNilai(data){
 }
 function fbSendChat(msg){
   const key = fbDb.ref(KB('chat')).push().key;
-  fbDb.ref(KB('chat/'+key).set({
+  fbDb.ref(KB('chat/'+key)).set({
     id:key, uid:currentUser.uid,
     nama:currentProfil?.nama||'Anonim',
     nisn:currentProfil?.nisn||'',
