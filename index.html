@@ -398,7 +398,8 @@ select.input-field option{background:#1a1740;color:#fff}
     <div class="auth-logo">
       <div class="al-icon">🤝</div>
       <h1>SAHABAT</h1>
-      <p>Sistem Aplikasi Kelas Digital</p>
+      <p>SMP 6 Sampang · Digital Class</p>
+      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:.5px">SMP6-SAMPANG-2025</div>
     </div>
 
     <!-- Tabs -->
@@ -910,37 +911,23 @@ select.input-field option{background:#1a1740;color:#fff}
 
     <!-- ══════ NILAI ══════ -->
     <div class="panel" id="panel-nilai">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
-        <div>
-          <h2>⭐ Nilai</h2>
-          <p>Nilai per siswa · hanya bisa dilihat oleh siswa itu sendiri</p>
-        </div>
-        <!-- Tombol Input hanya untuk wali kelas & sekretaris -->
-        <button class="btn btn-primary btn-sm admin-only" onclick="bukaInputNilai()"
-          style="flex-shrink:0;margin-top:4px">
-          <i class="ti ti-plus"></i> Input
-        </button>
+      <div class="page-header">
+        <h2>⭐ Nilai</h2>
+        <p>Rekap & input nilai semester genap</p>
       </div>
 
-      <!-- Pilih Siswa (hanya admin/wali) -->
-      <div id="nilai-pilih-siswa-wrap" class="admin-only" style="margin-bottom:12px">
-        <div style="font-size:11px;font-weight:800;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Pilih Siswa</div>
-        <select class="input-field" id="nilai-siswa-select" style="margin-bottom:0" onchange="onPilihSiswaNilai()">
-          <option value="">-- Pilih siswa untuk lihat/input nilai --</option>
-        </select>
-      </div>
-
-      <!-- Hero rata-rata -->
+      <!-- Hero avg -->
       <div class="nilai-avg" id="nilai-hero">
-        <div class="avg-lbl" id="nilai-hero-lbl">Rata-rata Nilai Kamu</div>
+        <div class="avg-lbl">Rata-rata Nilai Kamu</div>
         <div class="avg-val" id="nilai-rata">–</div>
         <div class="avg-ket" id="nilai-predikat">Belum ada data nilai</div>
       </div>
 
-      <!-- Tabs -->
+      <!-- Tabs Nilai -->
       <div class="itabs" id="nilai-tabs">
         <div class="itab active" onclick="switchNilaiTab(this,'nt-rekap')">Rekap</div>
         <div class="itab" onclick="switchNilaiTab(this,'nt-grafik')">Grafik</div>
+        <div class="itab" onclick="switchNilaiTab(this,'nt-input')">Input Nilai</div>
       </div>
 
       <!-- Tab Rekap -->
@@ -951,16 +938,23 @@ select.input-field option{background:#1a1740;color:#fff}
       <!-- Tab Grafik -->
       <div id="nt-grafik" style="display:none">
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">
-            <i class="ti ti-chart-bar" style="color:var(--accent)"></i>Grafik Nilai Per Mapel
-          </div>
+          <div class="card-title" style="margin-bottom:14px"><i class="ti ti-chart-bar" style="color:var(--accent)"></i>Grafik Nilai Per Mapel</div>
           <canvas id="nilai-chart" style="width:100%;max-height:220px"></canvas>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:12px">
-            <i class="ti ti-trophy" style="color:#fbbf24"></i>Ringkasan Prestasi
-          </div>
+          <div class="card-title" style="margin-bottom:12px"><i class="ti ti-trophy" style="color:#fbbf24"></i>Ringkasan Prestasi</div>
           <div id="nilai-prestasi-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+        </div>
+      </div>
+
+      <!-- Tab Input Nilai -->
+      <div id="nt-input" style="display:none">
+        <button class="btn btn-primary" style="width:100%;padding:12px;margin-bottom:14px" onclick="showSheet('sheet-input-nilai')">
+          <i class="ti ti-plus"></i> Tambah / Edit Nilai
+        </button>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px"><i class="ti ti-pencil" style="color:var(--secondary)"></i>Daftar Nilai Input</div>
+          <div id="nilai-input-list"></div>
         </div>
       </div>
 
@@ -1980,7 +1974,7 @@ function goTo(panel){
   document.getElementById('scroll-area').scrollTop=0;
   if(panel==='jadwal')initJadwal();
   if(panel==='tugas')renderTugas();
-  if(panel==='nilai'){populateSiswaNilaiSelect();renderNilai();}
+  if(panel==='nilai')renderNilai();
   if(panel==='kas'){renderKas();renderKasBayar();}
   if(panel==='presensi'){renderAbsenList();renderDaftarSiswa();renderRekapSiswa();}
   if(panel==='pengumuman')renderPengumuman();
@@ -3010,11 +3004,16 @@ function toggleCheck(el){el.classList.toggle('done')}
 // ═══════════════════════════════════════════
 // NILAI  
 // ═══════════════════════════════════════════
-// nilaiData: {[nisn]: [{id,mapel,nilai,ket,jenis,warna,inputBy,ts}]}
-let nilaiData={};  // kosong — diisi dari Firebase
+let nilaiData=[
+  {id:1,mapel:'Informatika',nilai:92,warna:'#4ECDC4',ket:'Ulangan Harian 3',jenis:'Ulangan Harian'},
+  {id:2,mapel:'Matematika',nilai:85,warna:'#3b82f6',ket:'UTS Semester Genap',jenis:'UTS'},
+  {id:3,mapel:'Bahasa Indonesia',nilai:88,warna:'#a855f7',ket:'Rata-rata Harian',jenis:'Rata-rata Harian'},
+  {id:4,mapel:'Fisika',nilai:79,warna:'#f97316',ket:'Ulangan Harian 2',jenis:'Ulangan Harian'},
+  {id:5,mapel:'PKK',nilai:90,warna:'#ec4899',ket:'Praktik & Teori',jenis:'Praktik'},
+  {id:6,mapel:'Desain Grafis',nilai:95,warna:'#22c55e',ket:'Portofolio Semester',jenis:'Portofolio'},
+  {id:7,mapel:'Bahasa Inggris',nilai:82,warna:'#eab308',ket:'Speaking + Writing',jenis:'Rata-rata Harian'},
+];
 let nilaiTab='nt-rekap';
-let nilaiTargetNisn='';  // NISN siswa yang sedang dilihat/diinput
-
 const nilaiWarna={'Informatika':'#4ECDC4','Matematika':'#3b82f6','Bahasa Indonesia':'#a855f7','Fisika':'#f97316','PKK':'#ec4899','Desain Grafis':'#22c55e','Bahasa Inggris':'#eab308','Penjaskes':'#06b6d4','BK':'#6b7280','Lainnya':'#FF6B6B'};
 
 function switchNilaiTab(el,tab){
@@ -3027,44 +3026,9 @@ function switchNilaiTab(el,tab){
   if(tab==='nt-input')renderNilaiInputList();
 }
 
-// Ambil data nilai untuk NISN tertentu
-function getNilaiSiswa(nisn){
-  if(!nisn) return [];
-  return (nilaiData[nisn]||[]);
-}
-
-function hitungRata(nisn){
-  const arr=getNilaiSiswa(nisn||nilaiTargetNisn);
-  if(!arr.length)return 0;
-  return(arr.reduce((s,n)=>s+n.nilai,0)/arr.length).toFixed(1);
-}
-
-// Isi dropdown pilih siswa di sheet & panel
-function populateSiswaNilaiSelect(){
-  ['nilai-siswa-select','input-nilai-siswa'].forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    const cur=sel.value;
-    sel.innerHTML='<option value="">-- Pilih siswa --</option>';
-    dataSiswa.forEach(s=>{
-      const opt=document.createElement('option');
-      opt.value=s.nisn;
-      opt.textContent=s.nama+' ('+s.nisn+')';
-      sel.appendChild(opt);
-    });
-    if(cur)sel.value=cur;
-  });
-}
-
-function onPilihSiswaNilai(){
-  const nisn=document.getElementById('nilai-siswa-select')?.value||'';
-  nilaiTargetNisn=nisn;
-  renderNilai();
-}
-
-function bukaInputNilai(){
-  populateSiswaNilaiSelect();
-  showSheet('sheet-input-nilai');
+function hitungRata(){
+  if(!nilaiData.length)return 0;
+  return(nilaiData.reduce((s,n)=>s+n.nilai,0)/nilaiData.length).toFixed(1);
 }
 function predikatNilai(r){
   if(r>=90)return'🏆 Sangat Baik';
@@ -3074,37 +3038,20 @@ function predikatNilai(r){
 }
 
 function renderNilai(){
-  // Tentukan NISN yang ditampilkan
-  let nisn = nilaiTargetNisn;
-  // Jika siswa biasa — otomatis pakai NISN sendiri
-  if(typeof currentRole!=='undefined' && currentRole==='siswa' && currentProfil?.nisn){
-    nisn=currentProfil.nisn;
-    nilaiTargetNisn=nisn;
-    // Sembunyikan pilih siswa untuk siswa biasa
-    const wrap=document.getElementById('nilai-pilih-siswa-wrap');
-    if(wrap)wrap.style.display='none';
-  }
-  const arr=getNilaiSiswa(nisn);
-  const rata=arr.length?hitungRata(nisn):'–';
-  const rataStr=rata; // alias untuk backward compat
-  document.getElementById('nilai-rata').textContent=rata;
-  const siswa=dataSiswa.find(s=>s.nisn===nisn);
-  const namaLbl=nisn?(siswa?siswa.nama+' · ':nisn+' · '):'';
-  document.getElementById('nilai-hero-lbl').textContent=nisn?'Rata-rata Nilai '+namaLbl.trim():'Rata-rata Nilai Kamu';
-  document.getElementById('nilai-predikat').textContent=arr.length?(predikatNilai(parseFloat(rata))+' · '+arr.length+' Mata Pelajaran'):'Belum ada data nilai';
+  const rata=hitungRata();
+  const rataStr=nilaiData.length?rata:'–';
+  document.getElementById('nilai-rata').textContent=rataStr;
+  document.getElementById('nilai-predikat').textContent=nilaiData.length?(predikatNilai(parseFloat(rata))+' · Peringkat 3 Kelas'):'Belum ada data nilai';
   // Sync ke dashboard hero & profil
   const dbAvg=document.getElementById('db-avg-nilai');
   if(dbAvg) dbAvg.textContent=rataStr;
   const profilAvg=document.getElementById('profil-avg-nilai');
   if(profilAvg) profilAvg.textContent=rataStr;
   const hero=document.getElementById('nilai-hero');
-  if(hero) hero.style.background=parseFloat(rata)>=90?'linear-gradient(135deg,#22c55e,#15803d)':parseFloat(rata)>=80?'linear-gradient(135deg,#a855f7,#7c3aed)':'linear-gradient(135deg,#f97316,#ea580c)';
+  hero.style.background=parseFloat(rata)>=90?'linear-gradient(135deg,#22c55e,#15803d)':parseFloat(rata)>=80?'linear-gradient(135deg,#a855f7,#7c3aed)':'linear-gradient(135deg,#f97316,#ea580c)';
 
   const list=document.getElementById('nilai-list');
-  if(!list)return;
-  const sorted=[...arr].sort((a,b)=>b.nilai-a.nilai);
-  // Tombol hapus hanya untuk admin
-  const canHapus=typeof currentRole!=='undefined'&&['walikelas','pengurus'].includes(currentRole);
+  const sorted=[...nilaiData].sort((a,b)=>b.nilai-a.nilai);
   list.innerHTML=sorted.map(n=>{
     const col=n.nilai>=90?'#4ade80':n.nilai>=80?'#60a5fa':n.nilai>=70?'#fbbf24':'#f87171';
     const grade=n.nilai>=90?'A':n.nilai>=80?'B':n.nilai>=70?'C':'D';
@@ -3118,17 +3065,17 @@ function renderNilai(){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="badge ${gradeBg}">${grade}</span>
-        ${canHapus?`<button class="btn btn-xs btn-ghost" onclick="hapusNilai(${n.id},'${nisn}')" style="color:#f87171;font-size:10px">🗑</button>`:''}
+        <button class="btn btn-xs btn-ghost" onclick="hapusNilai(${n.id})" style="color:#f87171;font-size:10px">🗑</button>
       </div>
     </div>`;
-  }).join('')||`<div class="empty-state"><div class="es-icon">⭐</div><div class="es-title">Belum ada nilai</div><div class="es-sub">${canHapus?'Tambah nilai via tombol + Input':'Nilai belum diinput oleh guru'}</div></div>`;
+  }).join('')||`<div class="empty-state"><div class="es-icon">⭐</div><div class="es-title">Belum ada nilai</div><div class="es-sub">Tambah nilai via tab Input Nilai</div></div>`;
 
   renderPrestasiGrid();
 }
 
 function renderNilaiInputList(){
   const list=document.getElementById('nilai-input-list');
-  list.innerHTML=arr.map(n=>{
+  list.innerHTML=nilaiData.map(n=>{
     const col=n.nilai>=90?'#4ade80':n.nilai>=80?'#60a5fa':n.nilai>=70?'#fbbf24':'#f87171';
     return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
       <div style="width:44px;height:44px;border-radius:12px;background:${nilaiWarna[n.mapel]||'#FF6B6B'}22;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-size:16px;font-weight:900;color:${col}">${n.nilai}</div>
@@ -3222,19 +3169,9 @@ function simpanNilai(){
   showToast('⭐ Nilai '+mapel+' ('+nilai+') disimpan!');
 }
 
-function hapusNilai(id, nisn){
-  const targetNisn=nisn||nilaiTargetNisn;
-  if(!nilaiData[targetNisn])return;
-  const idx=nilaiData[targetNisn].findIndex(n=>n.id===id);
-  if(idx>-1){
-    const m=nilaiData[targetNisn][idx].mapel;
-    nilaiData[targetNisn].splice(idx,1);
-    if(typeof fbDb!=='undefined'){
-      fbDb.ref('nilai/'+targetNisn).set(nilaiData[targetNisn]);
-    }
-    renderNilai();
-    showToast('🗑 Nilai '+m+' dihapus');
-  }
+function hapusNilai(id){
+  const idx=nilaiData.findIndex(n=>n.id===id);
+  if(idx>-1){const m=nilaiData[idx].mapel;nilaiData.splice(idx,1);renderNilai();renderNilaiInputList();showToast('🗑 Nilai '+m+' dihapus');}
 }
 
 // ═══════════════════════════════════════════
@@ -3906,10 +3843,13 @@ const fbDb   = firebase.database();
 
 // ─── Konstanta ───
 const WALI_KELAS_UID = 'decDcrXP4oO5FrRDf3BzvtiTNV22';
+const KELAS_ID = 'SMP6-SAMPANG-2025';  // Identifier unik per aplikasi kelas
+// Helper: prefix semua path Firebase dengan KELAS_ID
+const KB = (path) => 'kelas/' + KELAS_ID + '/' + path;
 const KODE_UNDANGAN = {
-  pengurus  : 'SAHABAT-PENGURUS-2025',
-  bendahara : 'SAHABAT-BENDAHARA-2025',
-  siswa     : 'SAHABAT-SISWA-2025'
+  pengurus  : 'SMP6-PENGURUS-2025',
+  bendahara : 'SMP6-BENDAHARA-2025',
+  siswa     : 'SMP6-SISWA-2025'
 };
 
 // State user saat ini
@@ -4030,7 +3970,7 @@ function updateUIByRole(){
 // ─── SYNC Firebase → Local ───
 function syncFromFirebase(){
   // Siswa
-  fbDb.ref('siswa').on('value', snap=>{
+  fbDb.ref(KB('siswa')).on('value', snap=>{
     const val = snap.val();
     if(val){
       dataSiswa = Object.values(val).sort((a,b)=>a.no-b.no);
@@ -4040,20 +3980,20 @@ function syncFromFirebase(){
   });
 
   // Kas
-  fbDb.ref('kas').on('value', snap=>{
+  fbDb.ref(KB('kas')).on('value', snap=>{
     const val = snap.val();
     if(val) trxData = Object.values(val).sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
     renderTrxList && renderTrxList();
   });
 
   // Jadwal
-  fbDb.ref('jadwal').on('value', snap=>{
+  fbDb.ref(KB('jadwal')).on('value', snap=>{
     const val = snap.val();
     if(val){ jadwalData = val; initJadwal(); }
   });
 
   // Presensi
-  fbDb.ref('presensi').on('value', snap=>{
+  fbDb.ref(KB('presensi')).on('value', snap=>{
     const val = snap.val();
     if(val){
       Object.assign(absensiPerHari, val);
@@ -4062,24 +4002,21 @@ function syncFromFirebase(){
   });
 
   // Pengumuman
-  fbDb.ref('pengumuman').on('value', snap=>{
+  fbDb.ref(KB('pengumuman')).on('value', snap=>{
     const val = snap.val();
     if(val) pengumumanData = Object.values(val).sort((a,b)=>b.ts-a.ts);
     renderPengumuman && renderPengumuman();
   });
 
-  // Nilai (per siswa: {[nisn]: [...]})
-  fbDb.ref('nilai').on('value', snap=>{
+  // Nilai
+  fbDb.ref(KB('nilai')).on('value', snap=>{
     const val = snap.val();
     if(val) nilaiData = val;
-    else nilaiData = {};
-    // Isi dropdown siswa
-    populateSiswaNilaiSelect && populateSiswaNilaiSelect();
     renderNilai && renderNilai();
   });
 
   // Chat realtime
-  fbDb.ref('chat').limitToLast(100).on('value', snap=>{
+  fbDb.ref(KB('chat')).limitToLast(100).on('value', snap=>{
     const val = snap.val();
     chatMessages = val ? Object.values(val) : [];
     renderChatMessages && renderChatMessages();
@@ -4096,34 +4033,34 @@ function syncFromFirebase(){
 // ─── SAVE helpers ke Firebase ───
 function fbSaveSiswa(siswa){
   if(!canEdit()) return;
-  fbDb.ref('siswa/'+siswa.nisn).set(siswa);
+  fbDb.ref(KB('siswa/'+siswa.nisn).set(siswa);
 }
 function fbSaveKas(trx){
   if(!canKas()) return;
-  const key = fbDb.ref('kas').push().key;
-  fbDb.ref('kas/'+key).set({...trx, id:key});
+  const key = fbDb.ref(KB('kas')).push().key;
+  fbDb.ref(KB('kas/'+key).set({...trx, id:key});
   return key;
 }
 function fbSavePresensi(tanggal, data){
   if(!canEdit()) return;
-  fbDb.ref('presensi/'+tanggal).set(data);
+  fbDb.ref(KB('presensi/'+tanggal).set(data);
 }
 function fbSaveJadwal(){
   if(!canEdit()) return;
-  fbDb.ref('jadwal').set(jadwalData);
+  fbDb.ref(KB('jadwal')).set(jadwalData);
 }
 function fbSavePengumuman(item){
   if(!canEdit()) return;
-  const key = fbDb.ref('pengumuman').push().key;
-  fbDb.ref('pengumuman/'+key).set({...item, id:key});
+  const key = fbDb.ref(KB('pengumuman')).push().key;
+  fbDb.ref(KB('pengumuman/'+key).set({...item, id:key});
 }
 function fbSaveNilai(data){
   if(!canEdit()) return;
-  fbDb.ref('nilai').set(data);
+  fbDb.ref(KB('nilai')).set(data);
 }
 function fbSendChat(msg){
-  const key = fbDb.ref('chat').push().key;
-  fbDb.ref('chat/'+key).set({
+  const key = fbDb.ref(KB('chat')).push().key;
+  fbDb.ref(KB('chat/'+key).set({
     id:key, uid:currentUser.uid,
     nama:currentProfil?.nama||'Anonim',
     nisn:currentProfil?.nisn||'',
