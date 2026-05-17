@@ -1620,6 +1620,22 @@ select.input-field option{background:#1a1740;color:#fff}
           </div>
           <button class="btn btn-success btn-sm" style="width:100%;margin-top:10px" onclick="showToast('Supabase + HTML sangat mudah! ⚡')">📖 Cara Integrasi Supabase</button>
         </div>
+        
+        <!-- Panel Manajemen Admin -->
+        <div class="db-card" style="margin-top:10px">
+          <div class="db-card-title">👥 Kelola Admin / Guru</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:10px">
+            Tambahkan guru atau admin lain yang bisa mengakses aplikasi ini.<br>
+            Mereka perlu daftar dulu, lalu masukkan UID-nya di sini.
+          </div>
+          <div id="admin-list-display" style="margin-bottom:10px"></div>
+          <input class="input-field" id="input-admin-uid" placeholder="Paste User UID baru di sini" style="margin-bottom:8px">
+          <input class="input-field" id="input-admin-nama" placeholder="Nama (misal: Pak Budi - Guru Matematika)" style="margin-bottom:8px">
+          <button class="btn btn-primary" style="width:100%;padding:11px;border-radius:12px;font-size:13px" 
+            onclick="tambahAdminBaru()">
+            <i class="ti ti-user-plus"></i> Tambah sebagai Admin
+          </button>
+        </div>
         <div class="info-box">
           <p>💡 <b>Rekomendasi:</b> Untuk 1 kelas (~35 siswa), <b>Firebase</b> lebih simpel dan bisa langsung pakai tanpa backend server.</p>
         </div>
@@ -3459,26 +3475,26 @@ let appConfig={
   bg:'#0f0c29', bg2:'#1a1740', bg3:'#231f5a',
   icons:{kas:'💰',chat:'💬',jadwal:'📅',tugas:'📚',presensi:'✅',nilai:'⭐',pengumuman:'📢',profil:'👤'}
 };
-try{const saved=localStorage.getItem('kelas11config');if(saved)appConfig=Object.assign(appConfig,JSON.parse(saved));}catch(e){}
+try{const saved=localStorage.getItem('smp6smgconfig');if(saved)appConfig=Object.assign(appConfig,JSON.parse(saved));}catch(e){}
 
 function saveConfig(){
   try{
-    localStorage.setItem('kelas11config', JSON.stringify(appConfig));
+    localStorage.setItem('smp6smgconfig', JSON.stringify(appConfig));
     // Simpan icon images terpisah (bisa besar)
-    localStorage.setItem('kelas11icons', JSON.stringify(iconImageData));
+    localStorage.setItem('smp6smgicons', JSON.stringify(iconImageData));
     // Simpan logo
-    if(cfgLogoDataUrl) localStorage.setItem('kelas11logo', cfgLogoDataUrl);
-    else localStorage.removeItem('kelas11logo');
+    if(cfgLogoDataUrl) localStorage.setItem('smp6smglogo', cfgLogoDataUrl);
+    else localStorage.removeItem('smp6smglogo');
   }catch(e){console.warn('Save config error:',e);}
 }
 
 function loadSavedConfig(){
   try{
-    const saved=localStorage.getItem('kelas11config');
+    const saved=localStorage.getItem('smp6smgconfig');
     if(saved) appConfig=Object.assign(appConfig,JSON.parse(saved));
-    const savedIcons=localStorage.getItem('kelas11icons');
+    const savedIcons=localStorage.getItem('smp6smgicons');
     if(savedIcons) Object.assign(iconImageData, JSON.parse(savedIcons));
-    const savedLogo=localStorage.getItem('kelas11logo');
+    const savedLogo=localStorage.getItem('smp6smglogo');
     if(savedLogo) cfgLogoDataUrl=savedLogo;
   }catch(e){console.warn('Load config error:',e);}
 }
@@ -3607,6 +3623,7 @@ let emojiTargetKey=null;
 
 // ── Tab navigation ──
 function cfgGoTab(tab){
+  if(tab==='database' && typeof loadAdminList==='function') loadAdminList();
   document.querySelectorAll('.cfg-tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.cfg-pane').forEach(p=>p.classList.remove('active'));
   const tb=document.getElementById('cfg-tab-'+tab);
