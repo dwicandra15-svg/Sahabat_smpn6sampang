@@ -911,14 +911,24 @@ select.input-field option{background:#1a1740;color:#fff}
 
     <!-- ══════ NILAI ══════ -->
     <div class="panel" id="panel-nilai">
-      <div class="page-header">
-        <h2>⭐ Nilai</h2>
-        <p>Rekap & input nilai semester genap</p>
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div><h2>⭐ Nilai</h2><p>Nilai per siswa · hanya bisa dilihat siswa sendiri</p></div>
+        <button class="btn btn-primary btn-sm admin-only" onclick="bukaInputNilai()" style="flex-shrink:0;margin-top:4px">
+          <i class="ti ti-plus"></i> Input
+        </button>
+      </div>
+
+      <!-- Pilih Siswa (hanya admin) -->
+      <div id="nilai-pilih-siswa-wrap" class="admin-only" style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Pilih Siswa</div>
+        <select class="input-field" id="nilai-siswa-select" style="margin-bottom:0" onchange="onPilihSiswaNilai()">
+          <option value="">-- Pilih siswa untuk lihat nilai --</option>
+        </select>
       </div>
 
       <!-- Hero avg -->
       <div class="nilai-avg" id="nilai-hero">
-        <div class="avg-lbl">Rata-rata Nilai Kamu</div>
+        <div class="avg-lbl" id="nilai-hero-lbl">Rata-rata Nilai Kamu</div>
         <div class="avg-val" id="nilai-rata">–</div>
         <div class="avg-ket" id="nilai-predikat">Belum ada data nilai</div>
       </div>
@@ -1974,7 +1984,7 @@ function renderDashboardPreview(){
   // Update avg nilai di hero — tampilkan "–" kalau belum ada data
   const avgEl = document.getElementById('db-avg-nilai');
   if(avgEl){
-    const r = (typeof nilaiData!=='undefined' && nilaiData.length) ? hitungRata() : '–';
+    const r = (typeof nilaiData!=='undefined' && Object.keys(nilaiData).length) ? '–' : '–'; // nilai ditampilkan per siswa
     avgEl.textContent = r;
     const profilAvg = document.getElementById('profil-avg-nilai');
     if(profilAvg) profilAvg.textContent = r;
@@ -1990,7 +2000,7 @@ function goTo(panel){
   document.getElementById('scroll-area').scrollTop=0;
   if(panel==='jadwal')initJadwal();
   if(panel==='tugas')renderTugas();
-  if(panel==='nilai')renderNilai();
+  if(panel==='nilai'){populateSiswaNilaiSelect&&populateSiswaNilaiSelect();renderNilai();}
   if(panel==='kas'){renderKas();renderKasBayar();}
   if(panel==='presensi'){renderAbsenList();renderDaftarSiswa();renderRekapSiswa();}
   if(panel==='pengumuman')renderPengumuman();
@@ -3020,15 +3030,8 @@ function toggleCheck(el){el.classList.toggle('done')}
 // ═══════════════════════════════════════════
 // NILAI  
 // ═══════════════════════════════════════════
-let nilaiData=[
-  {id:1,mapel:'Informatika',nilai:92,warna:'#4ECDC4',ket:'Ulangan Harian 3',jenis:'Ulangan Harian'},
-  {id:2,mapel:'Matematika',nilai:85,warna:'#3b82f6',ket:'UTS Semester Genap',jenis:'UTS'},
-  {id:3,mapel:'Bahasa Indonesia',nilai:88,warna:'#a855f7',ket:'Rata-rata Harian',jenis:'Rata-rata Harian'},
-  {id:4,mapel:'Fisika',nilai:79,warna:'#f97316',ket:'Ulangan Harian 2',jenis:'Ulangan Harian'},
-  {id:5,mapel:'PKK',nilai:90,warna:'#ec4899',ket:'Praktik & Teori',jenis:'Praktik'},
-  {id:6,mapel:'Desain Grafis',nilai:95,warna:'#22c55e',ket:'Portofolio Semester',jenis:'Portofolio'},
-  {id:7,mapel:'Bahasa Inggris',nilai:82,warna:'#eab308',ket:'Speaking + Writing',jenis:'Rata-rata Harian'},
-];
+// nilaiData kosong — diisi dari Firebase per siswa
+let nilaiData={};
 let nilaiTab='nt-rekap';
 const nilaiWarna={'Informatika':'#4ECDC4','Matematika':'#3b82f6','Bahasa Indonesia':'#a855f7','Fisika':'#f97316','PKK':'#ec4899','Desain Grafis':'#22c55e','Bahasa Inggris':'#eab308','Penjaskes':'#06b6d4','BK':'#6b7280','Lainnya':'#FF6B6B'};
 
@@ -3067,7 +3070,8 @@ function renderNilai(){
   hero.style.background=parseFloat(rata)>=90?'linear-gradient(135deg,#22c55e,#15803d)':parseFloat(rata)>=80?'linear-gradient(135deg,#a855f7,#7c3aed)':'linear-gradient(135deg,#f97316,#ea580c)';
 
   const list=document.getElementById('nilai-list');
-  const sorted=[...nilaiData].sort((a,b)=>b.nilai-a.nilai);
+  const sorted=[...arr].sort((a,b)=>b.nilai-a.nilai);
+  const canHapus=typeof currentRole!=='undefined'&&['walikelas','pengurus'].includes(currentRole);
   list.innerHTML=sorted.map(n=>{
     const col=n.nilai>=90?'#4ade80':n.nilai>=80?'#60a5fa':n.nilai>=70?'#fbbf24':'#f87171';
     const grade=n.nilai>=90?'A':n.nilai>=80?'B':n.nilai>=70?'C':'D';
@@ -3081,10 +3085,10 @@ function renderNilai(){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="badge ${gradeBg}">${grade}</span>
-        <button class="btn btn-xs btn-ghost" onclick="hapusNilai(${n.id})" style="color:#f87171;font-size:10px">🗑</button>
+        ${canHapus?`<button class='btn btn-xs btn-ghost' onclick='hapusNilai(${n.id},"${nisn}")' style='color:#f87171;font-size:10px'>🗑</button>`:''}
       </div>
     </div>`;
-  }).join('')||`<div class="empty-state"><div class="es-icon">⭐</div><div class="es-title">Belum ada nilai</div><div class="es-sub">Tambah nilai via tab Input Nilai</div></div>`;
+  }).join('')||`<div class='empty-state'><div class='es-icon'>⭐</div><div class='es-title'>Belum ada nilai</div><div class='es-sub'>${canHapus?'Tambah via tombol + Input':'Nilai belum diinput guru'}</div></div>`;
 
   renderPrestasiGrid();
 }
@@ -3108,11 +3112,11 @@ function renderPrestasiGrid(){
   const el=document.getElementById('nilai-prestasi-grid');
   if(!el)return;
   const rata=hitungRata();
-  const max=nilaiData.length?nilaiData.reduce((a,b)=>a.nilai>b.nilai?a:b):{mapel:'-',nilai:0};
-  const min=nilaiData.length?nilaiData.reduce((a,b)=>a.nilai<b.nilai?a:b):{mapel:'-',nilai:0};
+  const max=arr.length?arr.reduce((a,b)=>a.nilai>b.nilai?a:b):{mapel:'-',nilai:0};
+  const min=arr.length?arr.reduce((a,b)=>a.nilai<b.nilai?a:b):{mapel:'-',nilai:0};
   el.innerHTML=`
     <div class="rekap-box"><div class="rv" style="color:#4ade80">${rata}</div><div class="rl">Rata-rata</div></div>
-    <div class="rekap-box"><div class="rv" style="color:#fbbf24">${nilaiData.length}</div><div class="rl">Total Mapel</div></div>
+    <div class='rekap-box'><div class='rv' style='color:#fbbf24'>${arr.length}</div><div class='rl'>Total Mapel</div></div>
     <div class="rekap-box"><div class="rv" style="color:#4ade80;font-size:14px">${max.nilai}</div><div class="rl">Tertinggi<br><span style="font-size:9px;color:var(--text3)">${max.mapel}</span></div></div>
     <div class="rekap-box"><div class="rv" style="color:#f87171;font-size:14px">${min.nilai}</div><div class="rl">Terendah<br><span style="font-size:9px;color:var(--text3)">${min.mapel}</span></div></div>
   `;
@@ -3122,7 +3126,8 @@ let chartInst=null;
 function drawNilaiChart(){
   const canvas=document.getElementById('nilai-chart');
   if(!canvas)return;
-  const sorted=[...nilaiData].sort((a,b)=>b.nilai-a.nilai);
+  const sorted=[...arr].sort((a,b)=>b.nilai-a.nilai);
+  const canHapus=typeof currentRole!=='undefined'&&['walikelas','pengurus'].includes(currentRole);
   const labels=sorted.map(n=>n.mapel.length>10?n.mapel.substring(0,10)+'…':n.mapel);
   const values=sorted.map(n=>n.nilai);
   const colors=sorted.map(n=>n.warna||nilaiWarna[n.mapel]||'#FF6B6B');
@@ -3185,9 +3190,17 @@ function simpanNilai(){
   showToast('⭐ Nilai '+mapel+' ('+nilai+') disimpan!');
 }
 
-function hapusNilai(id){
-  const idx=nilaiData.findIndex(n=>n.id===id);
-  if(idx>-1){const m=nilaiData[idx].mapel;nilaiData.splice(idx,1);renderNilai();renderNilaiInputList();showToast('🗑 Nilai '+m+' dihapus');}
+function hapusNilai(id,nisn){
+  const tn=nisn||nilaiTargetNisn;
+  if(!nilaiData[tn])return;
+  const idx=nilaiData[tn].findIndex(n=>n.id===id);
+  if(idx>-1){
+    const m=nilaiData[tn][idx].mapel;
+    nilaiData[tn].splice(idx,1);
+    if(typeof fbDb!=='undefined') fbDb.ref(KB('nilai/'+tn)).set(nilaiData[tn]);
+    renderNilai();
+    showToast('🗑 Nilai '+m+' dihapus');
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -3475,6 +3488,8 @@ let appConfig={
   bg:'#0f0c29', bg2:'#1a1740', bg3:'#231f5a',
   icons:{kas:'💰',chat:'💬',jadwal:'📅',tugas:'📚',presensi:'✅',nilai:'⭐',pengumuman:'📢',profil:'👤'}
 };
+// Bersihkan localStorage lama (kelas11config) jika ada sisa
+try{localStorage.removeItem('kelas11config');localStorage.removeItem('kelas11icons');localStorage.removeItem('kelas11logo');}catch(e){}
 try{const saved=localStorage.getItem('smp6smgconfig');if(saved)appConfig=Object.assign(appConfig,JSON.parse(saved));}catch(e){}
 
 function saveConfig(){
@@ -4028,7 +4043,8 @@ function syncFromFirebase(){
   // Nilai
   fbDb.ref(KB('nilai')).on('value', snap=>{
     const val = snap.val();
-    if(val) nilaiData = val;
+    nilaiData = val ? val : {};
+    populateSiswaNilaiSelect && populateSiswaNilaiSelect();
     renderNilai && renderNilai();
   });
 
