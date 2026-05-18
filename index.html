@@ -390,6 +390,27 @@ select.input-field option{background:#1a1740;color:#fff}
 /* Online indicator */
 .online-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;box-shadow:0 0 6px #4ade80}
 </style>
+<script>
+// Auth proxy — di HEAD, pasti tersedia sebelum HTML dirender
+function _authProxy(fnName){
+  var args=Array.prototype.slice.call(arguments,1);
+  if(typeof window[fnName]==='function'){
+    window[fnName].apply(null,args);
+  } else {
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      if(typeof window[fnName]==='function'){
+        clearInterval(iv);
+        window[fnName].apply(null,args);
+      } else if(tries>100){
+        clearInterval(iv);
+        alert('App belum siap. Coba refresh (Ctrl+Shift+R)');
+      }
+    },100);
+  }
+}
+</script>
 </head>
 <body>
 <!-- ══════ AUTH SCREEN ══════ -->
@@ -2565,7 +2586,8 @@ function downloadRekapPDF(){
     .footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:10px}
     @media print{body{padding:0}}
   </style>
-  </head>
+  
+</head>
   <body>
     <div class="header">
       <h1>REKAP PRESENSI KELAS</h1>
