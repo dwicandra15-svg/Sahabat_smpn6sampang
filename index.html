@@ -351,6 +351,21 @@ select.input-field option{background:#1a1740;color:#fff}
 }
 </style>
 <!-- Firebase SDK -->
+<script>
+function _authProxy(fnName){
+  var args=Array.prototype.slice.call(arguments,1);
+  if(typeof window[fnName]==='function'){
+    window[fnName].apply(null,args);
+  } else {
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      if(typeof window[fnName]==='function'){clearInterval(iv);window[fnName].apply(null,args);}
+      else if(tries>100){clearInterval(iv);alert('Refresh halaman (Ctrl+Shift+R)');}
+    },100);
+  }
+}
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -390,27 +405,6 @@ select.input-field option{background:#1a1740;color:#fff}
 /* Online indicator */
 .online-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;box-shadow:0 0 6px #4ade80}
 </style>
-<script>
-// Auth proxy — di HEAD, pasti tersedia sebelum HTML dirender
-function _authProxy(fnName){
-  var args=Array.prototype.slice.call(arguments,1);
-  if(typeof window[fnName]==='function'){
-    window[fnName].apply(null,args);
-  } else {
-    var tries=0;
-    var iv=setInterval(function(){
-      tries++;
-      if(typeof window[fnName]==='function'){
-        clearInterval(iv);
-        window[fnName].apply(null,args);
-      } else if(tries>100){
-        clearInterval(iv);
-        alert('App belum siap. Coba refresh (Ctrl+Shift+R)');
-      }
-    },100);
-  }
-}
-</script>
 </head>
 <body>
 <!-- ══════ AUTH SCREEN ══════ -->
@@ -442,7 +436,7 @@ function _authProxy(fnName){
       </select>
       <input class="auth-input" id="login-id" placeholder="NISN / Email pengurus" type="text" autocomplete="username">
       <input class="auth-input" id="login-pass" placeholder="Password (min 8 digit)" type="password" autocomplete="current-password">
-      <button class="auth-btn" onclick="if(typeof doLogin==='function')doLogin()" id="btn-login">Masuk →</button>
+      <button class="auth-btn" onclick="_authProxy('doLogin')" id="btn-login">Masuk →</button>
       <div class="auth-divider">atau</div>
       <div style="text-align:center;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer" onclick="if(typeof authSwitchTab==='function')authSwitchTab('daftar')">Belum punya akun? <span style="color:#FF6B6B;font-weight:700">Daftar di sini</span></div>
     </div>
@@ -460,7 +454,7 @@ function _authProxy(fnName){
       <input class="auth-input" id="daftar-pass" placeholder="Password (min 8 karakter)" type="password">
       <input class="auth-input" id="daftar-pass2" placeholder="Konfirmasi Password" type="password">
       <input class="auth-input" id="daftar-kode" placeholder="Kode Undangan Kelas" type="text">
-      <button class="auth-btn" onclick="if(typeof doDaftar==='function')doDaftar()" id="btn-daftar">Buat Akun →</button>
+      <button class="auth-btn" onclick="_authProxy('doDaftar')" id="btn-daftar">Buat Akun →</button>
       <div class="auth-divider">atau</div>
       <div style="text-align:center;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer" onclick="if(typeof authSwitchTab==='function')authSwitchTab('masuk')">Sudah punya akun? <span style="color:#FF6B6B;font-weight:700">Masuk di sini</span></div>
     </div>
@@ -933,32 +927,36 @@ function _authProxy(fnName){
     <!-- ══════ NILAI ══════ -->
     <div class="panel" id="panel-nilai">
       <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
-        <div><h2>⭐ Nilai</h2><p>Nilai per siswa · hanya bisa dilihat siswa sendiri</p></div>
-        <button class="btn btn-primary btn-sm admin-only" onclick="bukaInputNilai()" style="flex-shrink:0;margin-top:4px">
+        <div>
+          <h2>⭐ Nilai</h2>
+          <p>Nilai per siswa · hanya bisa dilihat oleh siswa itu sendiri</p>
+        </div>
+        <!-- Tombol Input hanya untuk wali kelas & sekretaris -->
+        <button class="btn btn-primary btn-sm admin-only" onclick="bukaInputNilai()"
+          style="flex-shrink:0;margin-top:4px">
           <i class="ti ti-plus"></i> Input
         </button>
       </div>
 
-      <!-- Pilih Siswa (hanya admin) -->
+      <!-- Pilih Siswa (hanya admin/wali) -->
       <div id="nilai-pilih-siswa-wrap" class="admin-only" style="margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Pilih Siswa</div>
         <select class="input-field" id="nilai-siswa-select" style="margin-bottom:0" onchange="onPilihSiswaNilai()">
-          <option value="">-- Pilih siswa untuk lihat nilai --</option>
+          <option value="">-- Pilih siswa untuk lihat/input nilai --</option>
         </select>
       </div>
 
-      <!-- Hero avg -->
+      <!-- Hero rata-rata -->
       <div class="nilai-avg" id="nilai-hero">
         <div class="avg-lbl" id="nilai-hero-lbl">Rata-rata Nilai Kamu</div>
         <div class="avg-val" id="nilai-rata">–</div>
         <div class="avg-ket" id="nilai-predikat">Belum ada data nilai</div>
       </div>
 
-      <!-- Tabs Nilai -->
+      <!-- Tabs -->
       <div class="itabs" id="nilai-tabs">
         <div class="itab active" onclick="switchNilaiTab(this,'nt-rekap')">Rekap</div>
         <div class="itab" onclick="switchNilaiTab(this,'nt-grafik')">Grafik</div>
-        <div class="itab" onclick="switchNilaiTab(this,'nt-input')">Input Nilai</div>
       </div>
 
       <!-- Tab Rekap -->
@@ -969,23 +967,16 @@ function _authProxy(fnName){
       <!-- Tab Grafik -->
       <div id="nt-grafik" style="display:none">
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px"><i class="ti ti-chart-bar" style="color:var(--accent)"></i>Grafik Nilai Per Mapel</div>
+          <div class="card-title" style="margin-bottom:14px">
+            <i class="ti ti-chart-bar" style="color:var(--accent)"></i>Grafik Nilai Per Mapel
+          </div>
           <canvas id="nilai-chart" style="width:100%;max-height:220px"></canvas>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:12px"><i class="ti ti-trophy" style="color:#fbbf24"></i>Ringkasan Prestasi</div>
+          <div class="card-title" style="margin-bottom:12px">
+            <i class="ti ti-trophy" style="color:#fbbf24"></i>Ringkasan Prestasi
+          </div>
           <div id="nilai-prestasi-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
-        </div>
-      </div>
-
-      <!-- Tab Input Nilai -->
-      <div id="nt-input" style="display:none">
-        <button class="btn btn-primary" style="width:100%;padding:12px;margin-bottom:14px" onclick="showSheet('sheet-input-nilai')">
-          <i class="ti ti-plus"></i> Tambah / Edit Nilai
-        </button>
-        <div class="card">
-          <div class="card-title" style="margin-bottom:12px"><i class="ti ti-pencil" style="color:var(--secondary)"></i>Daftar Nilai Input</div>
-          <div id="nilai-input-list"></div>
         </div>
       </div>
 
@@ -2005,7 +1996,7 @@ function renderDashboardPreview(){
   // Update avg nilai di hero — tampilkan "–" kalau belum ada data
   const avgEl = document.getElementById('db-avg-nilai');
   if(avgEl){
-    const r = (typeof nilaiData!=='undefined' && Object.keys(nilaiData).length) ? '–' : '–'; // nilai ditampilkan per siswa
+    const r = (typeof nilaiData!=='undefined' && nilaiData.length) ? hitungRata() : '–';
     avgEl.textContent = r;
     const profilAvg = document.getElementById('profil-avg-nilai');
     if(profilAvg) profilAvg.textContent = r;
@@ -2021,7 +2012,7 @@ function goTo(panel){
   document.getElementById('scroll-area').scrollTop=0;
   if(panel==='jadwal')initJadwal();
   if(panel==='tugas')renderTugas();
-  if(panel==='nilai'){populateSiswaNilaiSelect&&populateSiswaNilaiSelect();renderNilai();}
+  if(panel==='nilai'){populateSiswaNilaiSelect();renderNilai();}
   if(panel==='kas'){renderKas();renderKasBayar();}
   if(panel==='presensi'){renderAbsenList();renderDaftarSiswa();renderRekapSiswa();}
   if(panel==='pengumuman')renderPengumuman();
@@ -2586,8 +2577,7 @@ function downloadRekapPDF(){
     .footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:10px}
     @media print{body{padding:0}}
   </style>
-  
-</head>
+  </head>
   <body>
     <div class="header">
       <h1>REKAP PRESENSI KELAS</h1>
@@ -3052,9 +3042,11 @@ function toggleCheck(el){el.classList.toggle('done')}
 // ═══════════════════════════════════════════
 // NILAI  
 // ═══════════════════════════════════════════
-// nilaiData kosong — diisi dari Firebase per siswa
-let nilaiData={};
+// nilaiData: {[nisn]: [{id,mapel,nilai,ket,jenis,warna,inputBy,ts}]}
+let nilaiData={};  // kosong — diisi dari Firebase
 let nilaiTab='nt-rekap';
+let nilaiTargetNisn='';  // NISN siswa yang sedang dilihat/diinput
+
 const nilaiWarna={'Informatika':'#4ECDC4','Matematika':'#3b82f6','Bahasa Indonesia':'#a855f7','Fisika':'#f97316','PKK':'#ec4899','Desain Grafis':'#22c55e','Bahasa Inggris':'#eab308','Penjaskes':'#06b6d4','BK':'#6b7280','Lainnya':'#FF6B6B'};
 
 function switchNilaiTab(el,tab){
@@ -3067,9 +3059,44 @@ function switchNilaiTab(el,tab){
   if(tab==='nt-input')renderNilaiInputList();
 }
 
-function hitungRata(){
-  if(!nilaiData.length)return 0;
-  return(nilaiData.reduce((s,n)=>s+n.nilai,0)/nilaiData.length).toFixed(1);
+// Ambil data nilai untuk NISN tertentu
+function getNilaiSiswa(nisn){
+  if(!nisn) return [];
+  return (nilaiData[nisn]||[]);
+}
+
+function hitungRata(nisn){
+  const arr=getNilaiSiswa(nisn||nilaiTargetNisn);
+  if(!arr.length)return 0;
+  return(arr.reduce((s,n)=>s+n.nilai,0)/arr.length).toFixed(1);
+}
+
+// Isi dropdown pilih siswa di sheet & panel
+function populateSiswaNilaiSelect(){
+  ['nilai-siswa-select','input-nilai-siswa'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">-- Pilih siswa --</option>';
+    dataSiswa.forEach(s=>{
+      const opt=document.createElement('option');
+      opt.value=s.nisn;
+      opt.textContent=s.nama+' ('+s.nisn+')';
+      sel.appendChild(opt);
+    });
+    if(cur)sel.value=cur;
+  });
+}
+
+function onPilihSiswaNilai(){
+  const nisn=document.getElementById('nilai-siswa-select')?.value||'';
+  nilaiTargetNisn=nisn;
+  renderNilai();
+}
+
+function bukaInputNilai(){
+  populateSiswaNilaiSelect();
+  showSheet('sheet-input-nilai');
 }
 function predikatNilai(r){
   if(r>=90)return'🏆 Sangat Baik';
@@ -3079,20 +3106,36 @@ function predikatNilai(r){
 }
 
 function renderNilai(){
-  const rata=hitungRata();
-  const rataStr=nilaiData.length?rata:'–';
-  document.getElementById('nilai-rata').textContent=rataStr;
-  document.getElementById('nilai-predikat').textContent=nilaiData.length?(predikatNilai(parseFloat(rata))+' · Peringkat 3 Kelas'):'Belum ada data nilai';
+  // Tentukan NISN yang ditampilkan
+  let nisn = nilaiTargetNisn;
+  // Jika siswa biasa — otomatis pakai NISN sendiri
+  if(typeof currentRole!=='undefined' && currentRole==='siswa' && currentProfil?.nisn){
+    nisn=currentProfil.nisn;
+    nilaiTargetNisn=nisn;
+    // Sembunyikan pilih siswa untuk siswa biasa
+    const wrap=document.getElementById('nilai-pilih-siswa-wrap');
+    if(wrap)wrap.style.display='none';
+  }
+  const arr=getNilaiSiswa(nisn);
+  const rata=arr.length?hitungRata(nisn):'–';
+  const rataStr=rata; // alias untuk backward compat
+  document.getElementById('nilai-rata').textContent=rata;
+  const siswa=dataSiswa.find(s=>s.nisn===nisn);
+  const namaLbl=nisn?(siswa?siswa.nama+' · ':nisn+' · '):'';
+  document.getElementById('nilai-hero-lbl').textContent=nisn?'Rata-rata Nilai '+namaLbl.trim():'Rata-rata Nilai Kamu';
+  document.getElementById('nilai-predikat').textContent=arr.length?(predikatNilai(parseFloat(rata))+' · '+arr.length+' Mata Pelajaran'):'Belum ada data nilai';
   // Sync ke dashboard hero & profil
   const dbAvg=document.getElementById('db-avg-nilai');
   if(dbAvg) dbAvg.textContent=rataStr;
   const profilAvg=document.getElementById('profil-avg-nilai');
   if(profilAvg) profilAvg.textContent=rataStr;
   const hero=document.getElementById('nilai-hero');
-  hero.style.background=parseFloat(rata)>=90?'linear-gradient(135deg,#22c55e,#15803d)':parseFloat(rata)>=80?'linear-gradient(135deg,#a855f7,#7c3aed)':'linear-gradient(135deg,#f97316,#ea580c)';
+  if(hero) hero.style.background=parseFloat(rata)>=90?'linear-gradient(135deg,#22c55e,#15803d)':parseFloat(rata)>=80?'linear-gradient(135deg,#a855f7,#7c3aed)':'linear-gradient(135deg,#f97316,#ea580c)';
 
   const list=document.getElementById('nilai-list');
+  if(!list)return;
   const sorted=[...arr].sort((a,b)=>b.nilai-a.nilai);
+  // Tombol hapus hanya untuk admin
   const canHapus=typeof currentRole!=='undefined'&&['walikelas','pengurus'].includes(currentRole);
   list.innerHTML=sorted.map(n=>{
     const col=n.nilai>=90?'#4ade80':n.nilai>=80?'#60a5fa':n.nilai>=70?'#fbbf24':'#f87171';
@@ -3107,17 +3150,17 @@ function renderNilai(){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="badge ${gradeBg}">${grade}</span>
-        ${canHapus?`<button class='btn btn-xs btn-ghost' onclick='hapusNilai(${n.id},"${nisn}")' style='color:#f87171;font-size:10px'>🗑</button>`:''}
+        ${canHapus?`<button class="btn btn-xs btn-ghost" onclick="hapusNilai(${n.id},'${nisn}')" style="color:#f87171;font-size:10px">🗑</button>`:''}
       </div>
     </div>`;
-  }).join('')||`<div class='empty-state'><div class='es-icon'>⭐</div><div class='es-title'>Belum ada nilai</div><div class='es-sub'>${canHapus?'Tambah via tombol + Input':'Nilai belum diinput guru'}</div></div>`;
+  }).join('')||`<div class="empty-state"><div class="es-icon">⭐</div><div class="es-title">Belum ada nilai</div><div class="es-sub">${canHapus?'Tambah nilai via tombol + Input':'Nilai belum diinput oleh guru'}</div></div>`;
 
   renderPrestasiGrid();
 }
 
 function renderNilaiInputList(){
   const list=document.getElementById('nilai-input-list');
-  list.innerHTML=nilaiData.map(n=>{
+  list.innerHTML=arr.map(n=>{
     const col=n.nilai>=90?'#4ade80':n.nilai>=80?'#60a5fa':n.nilai>=70?'#fbbf24':'#f87171';
     return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
       <div style="width:44px;height:44px;border-radius:12px;background:${nilaiWarna[n.mapel]||'#FF6B6B'}22;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-size:16px;font-weight:900;color:${col}">${n.nilai}</div>
@@ -3134,11 +3177,11 @@ function renderPrestasiGrid(){
   const el=document.getElementById('nilai-prestasi-grid');
   if(!el)return;
   const rata=hitungRata();
-  const max=arr.length?arr.reduce((a,b)=>a.nilai>b.nilai?a:b):{mapel:'-',nilai:0};
-  const min=arr.length?arr.reduce((a,b)=>a.nilai<b.nilai?a:b):{mapel:'-',nilai:0};
+  const max=nilaiData.length?nilaiData.reduce((a,b)=>a.nilai>b.nilai?a:b):{mapel:'-',nilai:0};
+  const min=nilaiData.length?nilaiData.reduce((a,b)=>a.nilai<b.nilai?a:b):{mapel:'-',nilai:0};
   el.innerHTML=`
     <div class="rekap-box"><div class="rv" style="color:#4ade80">${rata}</div><div class="rl">Rata-rata</div></div>
-    <div class='rekap-box'><div class='rv' style='color:#fbbf24'>${arr.length}</div><div class='rl'>Total Mapel</div></div>
+    <div class="rekap-box"><div class="rv" style="color:#fbbf24">${nilaiData.length}</div><div class="rl">Total Mapel</div></div>
     <div class="rekap-box"><div class="rv" style="color:#4ade80;font-size:14px">${max.nilai}</div><div class="rl">Tertinggi<br><span style="font-size:9px;color:var(--text3)">${max.mapel}</span></div></div>
     <div class="rekap-box"><div class="rv" style="color:#f87171;font-size:14px">${min.nilai}</div><div class="rl">Terendah<br><span style="font-size:9px;color:var(--text3)">${min.mapel}</span></div></div>
   `;
@@ -3148,8 +3191,7 @@ let chartInst=null;
 function drawNilaiChart(){
   const canvas=document.getElementById('nilai-chart');
   if(!canvas)return;
-  const sorted=[...arr].sort((a,b)=>b.nilai-a.nilai);
-  const canHapus=typeof currentRole!=='undefined'&&['walikelas','pengurus'].includes(currentRole);
+  const sorted=[...nilaiData].sort((a,b)=>b.nilai-a.nilai);
   const labels=sorted.map(n=>n.mapel.length>10?n.mapel.substring(0,10)+'…':n.mapel);
   const values=sorted.map(n=>n.nilai);
   const colors=sorted.map(n=>n.warna||nilaiWarna[n.mapel]||'#FF6B6B');
@@ -3212,14 +3254,16 @@ function simpanNilai(){
   showToast('⭐ Nilai '+mapel+' ('+nilai+') disimpan!');
 }
 
-function hapusNilai(id,nisn){
-  const tn=nisn||nilaiTargetNisn;
-  if(!nilaiData[tn])return;
-  const idx=nilaiData[tn].findIndex(n=>n.id===id);
+function hapusNilai(id, nisn){
+  const targetNisn=nisn||nilaiTargetNisn;
+  if(!nilaiData[targetNisn])return;
+  const idx=nilaiData[targetNisn].findIndex(n=>n.id===id);
   if(idx>-1){
-    const m=nilaiData[tn][idx].mapel;
-    nilaiData[tn].splice(idx,1);
-    if(typeof fbDb!=='undefined') fbDb.ref(KB('nilai/'+tn)).set(nilaiData[tn]);
+    const m=nilaiData[targetNisn][idx].mapel;
+    nilaiData[targetNisn].splice(idx,1);
+    if(typeof fbDb!=='undefined'){
+      fbDb.ref(KB('nilai/'+targetNisn)).set(nilaiData[targetNisn]);
+    }
     renderNilai();
     showToast('🗑 Nilai '+m+' dihapus');
   }
@@ -3510,8 +3554,7 @@ let appConfig={
   bg:'#0f0c29', bg2:'#1a1740', bg3:'#231f5a',
   icons:{kas:'💰',chat:'💬',jadwal:'📅',tugas:'📚',presensi:'✅',nilai:'⭐',pengumuman:'📢',profil:'👤'}
 };
-// Bersihkan localStorage lama (kelas11config) jika ada sisa
-try{localStorage.removeItem('kelas11config');localStorage.removeItem('kelas11icons');localStorage.removeItem('kelas11logo');}catch(e){}
+try{localStorage.removeItem('kelas11config');localStorage.removeItem('kelas11icons');localStorage.removeItem('kelas11logo');localStorage.removeItem('tekno11config');localStorage.removeItem('tekno11icons');localStorage.removeItem('tekno11logo');}catch(e){}
 try{const saved=localStorage.getItem('smp6smgconfig');if(saved)appConfig=Object.assign(appConfig,JSON.parse(saved));}catch(e){}
 
 function saveConfig(){
@@ -3880,9 +3923,33 @@ renderDaftarSiswa();
 // ════════════════════════════════════════════════════════
 // FIREBASE INTEGRATION
 // ════════════════════════════════════════════════════════
-window.addEventListener('load', function() {
 
-// Firebase already initialized above
+// ════════════════════════════════════════════════════
+// FIREBASE — global scope (SMP6 SAMPANG)
+// ════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyANdANC00JvTEFeKa0UQ4JcMGgCNvEQako",
+  authDomain: "sahabat-2fb4e.firebaseapp.com",
+  databaseURL: "https://sahabat-2fb4e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sahabat-2fb4e",
+  storageBucket: "sahabat-2fb4e.firebasestorage.app",
+  messagingSenderId: "840037245269",
+  appId: "1:840037245269:web:1b8e0918f18147c3364fdc"
+};
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb   = firebase.database();
+const WALI_KELAS_UID = 'decDcrXP4oO5FrRDf3BzvtiTNV22';
+const KELAS_ID = 'SMP6-SAMPANG-2025';
+const KB = (path) => 'kelas/' + KELAS_ID + '/' + path;
+const KODE_UNDANGAN = {
+  pengurus  : 'SMP6-PENGURUS-2025',
+  bendahara : 'SMP6-BENDAHARA-2025',
+  siswa     : 'SMP6-SISWA-2025'
+};
+
+window.addEventListener('load', function() {
+// Firebase init — see global scope above
 fbAuth.onAuthStateChanged(async user => {
   if(user){
     currentUser = user;
@@ -4033,10 +4100,12 @@ function syncFromFirebase(){
     renderPengumuman && renderPengumuman();
   });
 
-  // Nilai
+  // Nilai (per siswa: {[nisn]: [...]})
   fbDb.ref(KB('nilai')).on('value', snap=>{
     const val = snap.val();
-    nilaiData = val ? val : {};
+    if(val) nilaiData = val;
+    else nilaiData = {};
+    // Isi dropdown siswa
     populateSiswaNilaiSelect && populateSiswaNilaiSelect();
     renderNilai && renderNilai();
   });
@@ -4168,7 +4237,12 @@ async function doLogin(){
     btn.disabled = false; btn.textContent = 'Masuk →';
   }
 }
-window.doLogin = doLogin;
+window.doLogin            = doLogin;
+window.doDaftar           = doDaftar;
+window.doLogout           = doLogout;
+window.authSwitchTab      = authSwitchTab;
+window.onDaftarRoleChange = onDaftarRoleChange;
+console.log('[SAHABAT SMP6] ✅ Firebase+Auth ready. doLogin:', typeof doLogin);
 
 // ─── DAFTAR (dengan sistem approval untuk pengurus) ───
 async function doDaftar(){
@@ -4423,20 +4497,3 @@ window.bukaDetailApproval  = bukaDetailApproval;
 </script>
 </body>
 </html>
-
-// ════════════════════════════════════════════════════════
-// FIREBASE INIT — di luar window.load agar doLogin bisa akses fbAuth
-// ════════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyANdANC00JvTEFeKa0UQ4JcMGgCNvEQako",
-  authDomain: "sahabat-2fb4e.firebaseapp.com",
-  databaseURL: "https://sahabat-2fb4e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sahabat-2fb4e",
-  storageBucket: "sahabat-2fb4e.firebasestorage.app",
-  messagingSenderId: "840037245269",
-  appId: "1:840037245269:web:1b8e0918f18147c3364fdc"
-};;
-if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const fbAuth = firebase.auth();
-const fbDb   = firebase.database();
-
