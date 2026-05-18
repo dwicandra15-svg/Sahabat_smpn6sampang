@@ -3881,37 +3881,8 @@ renderDaftarSiswa();
 // FIREBASE INTEGRATION
 // ════════════════════════════════════════════════════════
 window.addEventListener('load', function() {
-const firebaseConfig = {
-  apiKey: "AIzaSyANdANC00JvTEFeKa0UQ4JcMGgCNvEQako",
-  authDomain: "sahabat-2fb4e.firebaseapp.com",
-  databaseURL: "https://sahabat-2fb4e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sahabat-2fb4e",
-  storageBucket: "sahabat-2fb4e.firebasestorage.app",
-  messagingSenderId: "840037245269",
-  appId: "1:840037245269:web:1b8e0918f18147c3364fdc"
-};
 
-if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const fbAuth = firebase.auth();
-const fbDb   = firebase.database();
-
-// ─── Konstanta ───
-const WALI_KELAS_UID = 'decDcrXP4oO5FrRDf3BzvtiTNV22';
-const KELAS_ID = 'SMP6-SAMPANG-2025';  // Identifier unik per aplikasi kelas
-// Helper: prefix semua path Firebase dengan KELAS_ID
-const KB = (path) => 'kelas/' + KELAS_ID + '/' + path;
-const KODE_UNDANGAN = {
-  pengurus  : 'SMP6-PENGURUS-2025',
-  bendahara : 'SMP6-BENDAHARA-2025',
-  siswa     : 'SMP6-SISWA-2025'
-};
-
-// State user saat ini
-let currentUser   = null;
-let currentRole   = null;
-let currentProfil = null;
-
-// ─── Auth State Observer ───
+// Firebase already initialized above
 fbAuth.onAuthStateChanged(async user => {
   if(user){
     currentUser = user;
@@ -4452,3 +4423,20 @@ window.bukaDetailApproval  = bukaDetailApproval;
 </script>
 </body>
 </html>
+
+// ════════════════════════════════════════════════════════
+// FIREBASE INIT — di luar window.load agar doLogin bisa akses fbAuth
+// ════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyANdANC00JvTEFeKa0UQ4JcMGgCNvEQako",
+  authDomain: "sahabat-2fb4e.firebaseapp.com",
+  databaseURL: "https://sahabat-2fb4e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sahabat-2fb4e",
+  storageBucket: "sahabat-2fb4e.firebasestorage.app",
+  messagingSenderId: "840037245269",
+  appId: "1:840037245269:web:1b8e0918f18147c3364fdc"
+};;
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb   = firebase.database();
+
